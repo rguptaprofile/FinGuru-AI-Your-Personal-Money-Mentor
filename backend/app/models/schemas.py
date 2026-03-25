@@ -108,3 +108,71 @@ class AdvisorV2Response(BaseModel):
     tts_text: str | None = None
     tts_provider_hint: str | None = None
     disclaimer: str
+
+
+class LifeEventInput(BaseModel):
+    event_type: Literal["bonus", "inheritance", "marriage", "new_baby", "job_change"]
+    amount: float = Field(0, ge=0)
+    profile: ProfileInput
+
+
+class LifeEventResponse(BaseModel):
+    event_type: str
+    action_plan: list[str]
+    suggested_allocation: dict[str, float]
+
+
+class CouplePartnerInput(BaseModel):
+    name: str
+    annual_salary: float = Field(..., ge=0)
+    section_80c: float = Field(0, ge=0)
+    section_80d: float = Field(0, ge=0)
+    monthly_expenses: float = Field(..., ge=0)
+    monthly_emi: float = Field(0, ge=0)
+
+
+class CouplesPlannerInput(BaseModel):
+    partner_one: CouplePartnerInput
+    partner_two: CouplePartnerInput
+    annual_rent_paid: float = Field(0, ge=0)
+    combined_goal_sip_target: float = Field(0, ge=0)
+
+
+class CouplesPlannerResponse(BaseModel):
+    combined_annual_income: float
+    combined_monthly_surplus: float
+    suggested_sip_split: dict[str, float]
+    tax_optimization_notes: list[str]
+
+
+class TaxWizardInput(BaseModel):
+    annual_salary: float = Field(..., ge=0)
+    has_form16_text: str | None = None
+    section_80c: float = Field(0, ge=0)
+    section_80d: float = Field(0, ge=0)
+    hra_exemption: float = Field(0, ge=0)
+    home_loan_interest: float = Field(0, ge=0)
+    other_deductions: float = Field(0, ge=0)
+
+
+class TaxWizardResponse(BaseModel):
+    missing_deductions: list[str]
+    old_vs_new_summary: TaxResponse
+    ranked_tax_saving_options: list[str]
+
+
+class MFPortfolioInput(BaseModel):
+    statement_source: Literal["cams", "kfintech", "manual"] = "manual"
+    invested_amount: float = Field(..., gt=0)
+    current_value: float = Field(..., gt=0)
+    years_held: float = Field(..., gt=0)
+    expense_ratio_percent: float = Field(1.2, ge=0, le=5)
+    benchmark_return_percent: float = Field(12, ge=0, le=30)
+
+
+class MFPortfolioResponse(BaseModel):
+    estimated_xirr_percent: float
+    benchmark_comparison_percent: float
+    expense_drag_amount: float
+    overlap_risk_level: Literal["low", "medium", "high"]
+    rebalance_plan: list[str]

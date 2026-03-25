@@ -30,16 +30,59 @@ const defaultTax = {
   other_deductions: 0,
 };
 
+const defaultLifeEvent = {
+  event_type: "bonus",
+  amount: 200000,
+  profile: defaultProfile,
+};
+
+const defaultCouples = {
+  partner_one: {
+    name: "Aman",
+    annual_salary: 1200000,
+    section_80c: 120000,
+    section_80d: 20000,
+    monthly_expenses: 45000,
+    monthly_emi: 10000,
+  },
+  partner_two: {
+    name: "Riya",
+    annual_salary: 900000,
+    section_80c: 150000,
+    section_80d: 25000,
+    monthly_expenses: 35000,
+    monthly_emi: 5000,
+  },
+  annual_rent_paid: 300000,
+  combined_goal_sip_target: 50000,
+};
+
+const defaultMFXray = {
+  statement_source: "manual",
+  invested_amount: 1000000,
+  current_value: 1420000,
+  years_held: 4,
+  expense_ratio_percent: 1.4,
+  benchmark_return_percent: 12,
+};
+
 export default function Home() {
   const [profileJson, setProfileJson] = useState(JSON.stringify(defaultProfile, null, 2));
   const [taxJson, setTaxJson] = useState(JSON.stringify(defaultTax, null, 2));
   const [question, setQuestion] = useState("Mere liye monthly SIP kitna hona chahiye FIRE goal ke liye?");
   const [chatLanguage, setChatLanguage] = useState("en");
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [lifeEventJson, setLifeEventJson] = useState(JSON.stringify(defaultLifeEvent, null, 2));
+  const [couplesJson, setCouplesJson] = useState(JSON.stringify(defaultCouples, null, 2));
+  const [mfXrayJson, setMfXrayJson] = useState(JSON.stringify(defaultMFXray, null, 2));
 
   const [moneyHealth, setMoneyHealth] = useState(null);
   const [firePlan, setFirePlan] = useState(null);
   const [taxResult, setTaxResult] = useState(null);
+  const [lifeEventResult, setLifeEventResult] = useState(null);
+  const [couplesResult, setCouplesResult] = useState(null);
+  const [taxWizardResult, setTaxWizardResult] = useState(null);
+  const [mfXrayResult, setMfXrayResult] = useState(null);
   const [chatAnswer, setChatAnswer] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,6 +150,90 @@ export default function Home() {
       setTaxResult(await response.json());
     } catch (err) {
       setError(`Tax optimizer error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runTaxWizard() {
+    setLoading(true);
+    setError("");
+    try {
+      const payload = JSON.parse(taxJson);
+      const response = await fetch(`${API_BASE}/finance/tax-wizard`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error("Tax wizard failed");
+      }
+      setTaxWizardResult(await response.json());
+    } catch (err) {
+      setError(`Tax wizard error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runLifeEventAdvisor() {
+    setLoading(true);
+    setError("");
+    try {
+      const payload = JSON.parse(lifeEventJson);
+      const response = await fetch(`${API_BASE}/finance/life-event-advisor`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error("Life event advisor failed");
+      }
+      setLifeEventResult(await response.json());
+    } catch (err) {
+      setError(`Life event advisor error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runCouplesPlanner() {
+    setLoading(true);
+    setError("");
+    try {
+      const payload = JSON.parse(couplesJson);
+      const response = await fetch(`${API_BASE}/finance/couples-planner`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error("Couples planner failed");
+      }
+      setCouplesResult(await response.json());
+    } catch (err) {
+      setError(`Couples planner error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function runMFXray() {
+    setLoading(true);
+    setError("");
+    try {
+      const payload = JSON.parse(mfXrayJson);
+      const response = await fetch(`${API_BASE}/finance/mf-portfolio-xray`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error("MF X-Ray failed");
+      }
+      setMfXrayResult(await response.json());
+    } catch (err) {
+      setError(`MF X-Ray error: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -230,9 +357,14 @@ export default function Home() {
       <section className="panel">
         <h2>3) Tax Optimizer</h2>
         <textarea value={taxJson} onChange={(event) => setTaxJson(event.target.value)} rows={8} />
-        <button onClick={runTaxOptimizer} disabled={loading}>
-          Run Tax Comparison
-        </button>
+        <div className="chat-actions">
+          <button onClick={runTaxOptimizer} disabled={loading}>
+            Run Tax Comparison
+          </button>
+          <button onClick={runTaxWizard} disabled={loading}>
+            Run Tax Wizard
+          </button>
+        </div>
         {taxResult && (
           <div className="tax-grid">
             <div className="mini-card">
@@ -249,10 +381,70 @@ export default function Home() {
             </div>
           </div>
         )}
+        {taxWizardResult && (
+          <div className="mini-card" style={{ marginTop: "10px" }}>
+            <strong>Tax Wizard Missing Deductions</strong>
+            <ul>
+              {taxWizardResult.missing_deductions.map((item, idx) => (
+                <li key={`${item}-${idx}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       <section className="panel">
-        <h2>4) AI Financial Advisor Chat</h2>
+        <h2>4) Life Event Financial Advisor</h2>
+        <textarea value={lifeEventJson} onChange={(event) => setLifeEventJson(event.target.value)} rows={10} />
+        <button onClick={runLifeEventAdvisor} disabled={loading}>
+          Run Life Event Advisor
+        </button>
+        {lifeEventResult && (
+          <div className="mini-card" style={{ marginTop: "10px" }}>
+            <strong>Event: {lifeEventResult.event_type}</strong>
+            <ul>
+              {lifeEventResult.action_plan.map((item, idx) => (
+                <li key={`${item}-${idx}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      <section className="panel">
+        <h2>5) Couple&apos;s Money Planner</h2>
+        <textarea value={couplesJson} onChange={(event) => setCouplesJson(event.target.value)} rows={12} />
+        <button onClick={runCouplesPlanner} disabled={loading}>
+          Run Couples Planner
+        </button>
+        {couplesResult && (
+          <div className="mini-card" style={{ marginTop: "10px" }}>
+            <div>Combined Annual Income: Rs {Math.round(couplesResult.combined_annual_income).toLocaleString("en-IN")}</div>
+            <div>
+              Combined Monthly Surplus: Rs {Math.round(couplesResult.combined_monthly_surplus).toLocaleString("en-IN")}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="panel">
+        <h2>6) MF Portfolio X-Ray</h2>
+        <textarea value={mfXrayJson} onChange={(event) => setMfXrayJson(event.target.value)} rows={8} />
+        <button onClick={runMFXray} disabled={loading}>
+          Run MF X-Ray
+        </button>
+        {mfXrayResult && (
+          <div className="mini-card" style={{ marginTop: "10px" }}>
+            <div>Estimated XIRR: {mfXrayResult.estimated_xirr_percent}%</div>
+            <div>Benchmark Delta: {mfXrayResult.benchmark_comparison_percent}%</div>
+            <div>Expense Drag: Rs {Math.round(mfXrayResult.expense_drag_amount).toLocaleString("en-IN")}</div>
+            <div>Overlap Risk: {mfXrayResult.overlap_risk_level.toUpperCase()}</div>
+          </div>
+        )}
+      </section>
+
+      <section className="panel">
+        <h2>7) AI Financial Advisor Chat</h2>
         <textarea rows={4} value={question} onChange={(event) => setQuestion(event.target.value)} />
         <div className="chat-controls">
           <label>
