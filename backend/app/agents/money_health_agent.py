@@ -1,3 +1,83 @@
+from app.models.schemas import MoneyHealthDimension, MoneyHealthResponse, ProfileInput
+
+
+def _clamp_score(score: float) -> int:
+    return max(0, min(100, round(score)))
+
+
+def evaluate_money_health(profile: ProfileInput) -> MoneyHealthResponse:
+    monthly_surplus = profile.monthly_income - profile.monthly_expenses - profile.monthly_emi
+    emergency_target = profile.monthly_expenses * 6
+
+    emergency_score = _clamp_score((profile.emergency_fund / max(1, emergency_target)) * 100)
+    insurance_needed = profile.annual_salary * 15
+    insurance_score = _clamp_score((profile.annual_insurance_cover / max(1, insurance_needed)) * 100)
+
+    invest_ratio = profile.existing_investments / max(1, profile.annual_salary)
+    diversification_score = _clamp_score(30 + invest_ratio * 70)
+
+    debt_to_income = (profile.monthly_emi / max(1, profile.monthly_income)) * 100
+    debt_health_score = _clamp_score(100 - (debt_to_income * 2))
+
+    savings_ratio = (monthly_surplus / max(1, profile.monthly_income)) * 100
+    tax_efficiency_score = _clamp_score(40 + max(0, savings_ratio) * 1.5)
+
+    retirement_score = _clamp_score((profile.existing_investments / max(1, profile.annual_salary * 2)) * 100)
+
+    dimensions = [
+        MoneyHealthDimension(
+            name="Emergency Preparedness",
+            score=emergency_score,
+            insight=f"Emergency fund covers {profile.emergency_fund / max(1, profile.monthly_expenses):.1f} months.",
+        ),
+        MoneyHealthDimension(
+            name="Insurance Coverage",
+            score=insurance_score,
+            insight=f"Current cover is {round((profile.annual_insurance_cover / max(1, insurance_needed)) * 100)}% of recommended.",
+        ),
+        MoneyHealthDimension(
+            name="Investment Diversification",
+            score=diversification_score,
+            insight="Diversify across index funds, debt funds, and gold ETFs.",
+        ),
+        MoneyHealthDimension(
+            name="Debt Health",
+            score=debt_health_score,
+            insight=f"EMI to income ratio is {debt_to_income:.1f}%.",
+        ),
+        MoneyHealthDimension(
+            name="Tax Efficiency",
+            score=tax_efficiency_score,
+            insight="Use 80C, 80D, and HRA to improve post-tax returns.",
+        ),
+        MoneyHealthDimension(
+            name="Retirement Readiness",
+            score=retirement_score,
+            insight="Step up SIP by 10% annually for faster FIRE progress.",
+        ),
+    ]
+
+    total_score = round(sum(item.score for item in dimensions) / len(dimensions))
+    if total_score >= 75:
+        status = "Strong"
+    elif total_score >= 50:
+        status = "Stable but needs improvement"
+    else:
+        status = "At risk"
+
+    recommendations = [
+        "Build emergency corpus to 6 months of expenses.",
+        "Keep EMI below 30% of monthly income.",
+        "Increase SIP by at least 10% every year.",
+        "Review insurance and tax deductions each financial year.",
+    ]
+
+    return MoneyHealthResponse(
+        total_score=total_score,
+        status=status,
+        dimensions=dimensions,
+        recommendations=recommendations,
+    )
 """
 Money Health Agent - Calculates comprehensive financial wellness score
 """

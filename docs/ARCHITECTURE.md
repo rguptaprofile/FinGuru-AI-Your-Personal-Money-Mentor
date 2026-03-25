@@ -1,3 +1,76 @@
+# FinGuru AI Architecture Document
+
+## 1. System Overview
+
+FinGuru AI is a full-stack, multi-agent personal finance platform designed for Indian users.
+
+It supports:
+- Money Health Score (0-100 across 6 dimensions)
+- FIRE Path Planner (goal-wise SIP and allocation)
+- Tax Optimizer (old vs new regime comparison)
+- AI Financial Advisor Chat
+
+## 2. High-Level Architecture
+
+```mermaid
+flowchart LR
+  U[User] --> FE[Next.js Frontend Dashboard]
+  FE -->|REST| BE[FastAPI Backend]
+  BE --> ORC[Finance Orchestration Layer]
+  ORC --> MH[Money Health Agent]
+  ORC --> GP[Goal Planning Agent]
+  ORC --> TX[Tax Optimizer Agent]
+  ORC --> AD[Advisor Agent]
+  AD -->|Optional| LLM[(OpenAI API)]
+  ORC --> RESP[Structured JSON Responses]
+  RESP --> FE
+```
+
+## 3. Agent Roles
+
+1. Money Health Agent
+- Computes financial wellness score across emergency preparedness, insurance, diversification, debt health, tax efficiency, and retirement readiness.
+
+2. Goal Planning Agent
+- Builds FIRE roadmap and goal-wise SIP plan.
+- Suggests risk-based asset allocation.
+
+3. Tax Optimizer Agent
+- Computes old and new regime taxes.
+- Recommends better regime and annual saving estimate.
+
+4. Advisor Agent
+- Accepts natural language questions.
+- Uses OpenAI if API key is configured, else deterministic fallback logic.
+
+## 4. Communication Pattern
+
+- Frontend calls independent backend endpoints for each feature.
+- Planner flow uses parallel API calls for score + FIRE plan.
+- All responses are schema-validated with Pydantic models.
+
+## 5. Error Handling
+
+- Input validation errors are handled by FastAPI and surfaced in frontend error panel.
+- Network/API failures return graceful messages in UI.
+- Advisor endpoint has fallback strategy if LLM is unavailable.
+
+## 6. Security & Compliance Notes
+
+- Current version is educational guidance and not a SEBI-registered advisory service.
+- Recommended production upgrades:
+  - Authentication + user-level data isolation
+  - Encrypted storage of sensitive financial data
+  - Audit logs and PII masking
+
+## 7. Deployment-Ready Path
+
+- Frontend can be deployed on Vercel.
+- Backend can be deployed on Render/Fly.io/Azure App Service.
+- Environment variables:
+  - OPENAI_API_KEY
+  - OPENAI_MODEL
+  - NEXT_PUBLIC_API_BASE
 # FinGuru Architecture Document
 
 ## 1. System Design Overview

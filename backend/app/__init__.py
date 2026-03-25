@@ -1,1 +1,1 @@
-# FinGuru Backend Application
+"""FinGuru backend package."""
